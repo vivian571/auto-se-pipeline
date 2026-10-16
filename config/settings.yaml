@@ -1,0 +1,39 @@
+# Auto-SE Pipeline Global Configuration v1.1
+
+llm:
+  default_provider: "anthropic"
+  model: "claude-3-5-sonnet-20241022"
+  temperature: 0.1
+  max_output_tokens: 4096
+  # 模型适配降级/备选
+  fallback_model: "gpt-4o"
+
+budget:
+  max_tokens_per_task: 150000
+  max_cost_usd_per_task: 1.50
+  max_repair_attempts: 3
+
+sandbox:
+  reproduce_timeout_seconds: 60
+  regression_timeout_seconds: 900
+  cpu_quota: 2.0
+  memory_limit: "2g"
+  network_mode_stage1: "bridge"    # 仅允许官方包管理器白名单镜像
+  network_mode_stage2: "none"      # 严格断网
+
+rate_limits:
+  max_active_prs_per_repo: 1
+  max_prs_per_repo_daily: 1
+  max_prs_global_daily: 3
+  blacklist_threshold_rejections: 2
+
+compliance:
+  require_human_approval: true
+  ai_disclosure_statement: "Generated with AI assistance; strictly validated in an isolated sandbox and manually reviewed before submission."
+  forbidden_ai_keywords:
+    - "no ai"
+    - "no llm"
+    - "disallow ai"
+    - "prohibit ai"
+    - "forbids ai"
+    - "strict human-only"
