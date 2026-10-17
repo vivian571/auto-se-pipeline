@@ -45,6 +45,9 @@ def main():
     run_parser.add_argument("--expected-exception", default=None, help="Expected exception signature")
     run_parser.add_argument("--test-cmd", default="pytest -v", help="Test command to run")
     run_parser.add_argument("--auto-approve", action="store_true", help="Bypass manual interactive approval for CI/test")
+    run_parser.add_argument("--llm", default="mock", help="LLM Provider type: mock, local, groq, openrouter, deepseek, ollama")
+    run_parser.add_argument("--model", default=None, help="Override target model name")
+    run_parser.add_argument("--base-url", default=None, help="Override LLM base URL endpoint")
 
     # 4. 系统度量与成本报表 (Sprint 4)
     subparsers.add_parser("metrics", help="Display global pipeline telemetry and cost metrics")
@@ -181,9 +184,14 @@ def main():
         # ---------------------------------------------------------------------
         # Stage 3: 对抗双 Agent 闭环修复与沙箱验证 (Swarm Orchestrator)
         # ---------------------------------------------------------------------
-        print("\n🥊 Stage 3: Running Dual-Agent Swarm (Debugger vs Coder in Sandbox)...")
+        print(f"\n🥊 Stage 3: Running Dual-Agent Swarm (Provider: {args.llm})...")
         sandbox = ProcessIsolationSandbox(args.repo_path)
-        llm = MockLLMProvider()
+        from core.llm_provider import create_llm_provider
+        llm = create_llm_provider(
+            provider_type=args.llm,
+            base_url=args.base_url,
+            model_name=args.model,
+        )
         orchestrator = SwarmOrchestrator(sandbox=sandbox, llm_provider=llm, database=db)
 
         swarm_res = orchestrator.run_repair_swarm(

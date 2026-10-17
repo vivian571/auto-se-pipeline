@@ -85,10 +85,30 @@ pytest -v
 python eval/benchmark_runner.py
 ```
 
-### 2. 端到端自主运行流水线 (`pipeline run`)
+### 2. 配置大模型 (支持完全免费路线与商业 API)
+
+系统采用通用 `OpenAICompatibleProvider`（仅基于标准库 `urllib`，零多余依赖），只需配置环境变量即可无缝对接：
+
 ```bash
-# 启动完整流水线（自动经历合规嗅探 ➔ AST 切片 ➔ 双 Agent 沙箱对抗 ➔ 人工终审看板 ➔ 透明 PR 提交）
+# 方案 A: 本地 Ollama (完全免费、断网可用)
+ollama pull qwen2.5-coder:7b
+export LLM_BASE_URL="http://localhost:11434/v1"
+export LLM_API_KEY="ollama"
+export LLM_MODEL="qwen2.5-coder:7b"
+
+# 方案 B: Groq 免费层 (速度极快，推荐)
+export LLM_BASE_URL="https://api.groq.com/openai/v1"
+export LLM_API_KEY="gsk_..."
+export LLM_MODEL="llama-3.3-70b-versatile"
+
+# 方案 C: OpenRouter 免费/低成本模型
+export LLM_BASE_URL="https://openrouter.ai/api/v1"
+export LLM_API_KEY="sk-or-..."
+export LLM_MODEL="deepseek/deepseek-chat"
+
+# 运行流水线 (使用 --llm local 走免费/兼容路线)
 python main.py run \
+  --llm local \
   --repo-path /path/to/target_repo \
   --issue-number 100 \
   --issue-title "safe_divide crashes on zero divisor" \
