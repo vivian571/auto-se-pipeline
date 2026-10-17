@@ -26,6 +26,11 @@ from storage.database import Database, TaskStatus
 
 def run_live_rehearsal():
     repo_dir = PROJECT_ROOT / "workspace" / "rehearsal-calc-repo"
+    import subprocess
+    # 确保每次运行前，演练仓库都回到包含 Bug 的初始状态
+    subprocess.run(["git", "reset", "--hard", "fc251aa"], cwd=repo_dir, capture_output=True)
+    subprocess.run(["git", "clean", "-fd"], cwd=repo_dir, capture_output=True)
+
     db_file = PROJECT_ROOT / "workspace" / "rehearsal_pipeline.db"
     if db_file.exists():
         db_file.unlink()
