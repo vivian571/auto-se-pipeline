@@ -5,6 +5,7 @@ Auto-SE Pipeline CLI & Full Orchestration Entrypoint (v1.1)
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -46,6 +47,13 @@ def main():
     run_parser.add_argument("--test-cmd", default="pytest -v", help="Test command to run")
     run_parser.add_argument("--auto-approve", action="store_true", help="Bypass manual interactive approval for CI/test")
     run_parser.add_argument("--llm", default="mock", help="LLM Provider type: mock, local, groq, openrouter, deepseek, ollama")
+    run_parser.add_argument("--gateway", default="auto", choices=["auto", "mock", "live"],
+                            help="GitHub gateway: mock (default offline), live (real PR via API), auto (live if GITHUB_TOKEN is set)")
+    run_parser.add_argument("--base-branch", default="main", help="PR target branch")
+    run_parser.add_argument("--fork-owner", default=None,
+                            help="你的 GitHub 用户名（给他人仓库提 PR 时；不填则从 origin 自动推导）")
+    run_parser.add_argument("--target-repo", default=None,
+                            help="PR 目标仓库 owner/repo（给他人仓库提 PR 时填上游，如 psf/requests）")
     run_parser.add_argument("--model", default=None, help="Override target model name")
     run_parser.add_argument("--base-url", default=None, help="Override LLM base URL endpoint")
 
@@ -214,7 +222,19 @@ def main():
         # Stage 4: 人工终审审查与透明 GitHub 提交 (Approval UI & Gateway)
         # ---------------------------------------------------------------------
         print("\n🧑‍⚖️ Stage 4: Presenting Verification Dashboard for Human Approval...")
-        gateway = MockGitHubGateway(db)
+        gateway_mode = args.gateway
+        if gateway_mode == "auto":
+            gateway_mode = "live" if os.environ.get("GITHUB_TOKEN") else "mock"
+        if gateway_mode == "live":
+            print("🌐 GitHub gateway: LIVE (real PR will be created via API after approval)")
+            gateway = LiveGitHubGateway(
+                github_token=os.environ.get("GITHUB_TOKEN", ""),
+                database=db,
+                repo_path=args.repo_path,
+            )
+        else:
+            print("🧪 GitHub gateway: MOCK (no real PR will be created)")
+            gateway = MockGitHubGateway(db)
         approval_console = HumanApprovalConsole(gateway, db)
 
         decision = approval_console.present_and_request_approval(
@@ -225,6 +245,9 @@ def main():
             swarm_result=swarm_res,
             interactive=not args.auto_approve,
             auto_approve=args.auto_approve,
+            base_branch=args.base_branch,
+            fork_owner=args.fork_owner,
+            target_repo=args.target_repo,
         )
 
         if decision.approved and decision.pr_response and decision.pr_response.success:

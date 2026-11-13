@@ -43,6 +43,9 @@ class HumanApprovalConsole:
         swarm_result: SwarmResult,
         interactive: bool = True,
         auto_approve: bool = False,
+        base_branch: str = "main",
+        fork_owner: Optional[str] = None,
+        target_repo: Optional[str] = None,
     ) -> ApprovalDecision:
         """
         Renders the review dashboard and waits for human input.
@@ -120,6 +123,9 @@ class HumanApprovalConsole:
             author_handle=self.author_handle,
             author_email=self.author_email,
             signed_off=True,
+            base_branch=base_branch,
+            fork_owner=fork_owner,
+            target_repo=target_repo,
         )
 
         pr_resp = self.gateway.create_pull_request(payload)
